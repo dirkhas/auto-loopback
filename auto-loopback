@@ -1,0 +1,32 @@
+#!/usr/bin/env zsh
+
+function hosts() {
+    grep '^127\.' /etc/hosts | grep -v '^127\.0\.0\.1' | cut -wf1 | sort -u
+}
+
+function ips() {
+    ifconfig lo0 inet | grep inet | grep -v '127\.0\.0\.1' | cut -wf3 | sort -u
+}
+
+function trim() {
+    comm -23 <(hosts) <(ips) | xargs -L1 ifconfig lo0 alias
+    comm -13 <(hosts) <(ips) | xargs -L1 ifconfig lo0 -alias
+
+}
+function enable() {
+    hosts | xargs -L1 ifconfig lo0 alias
+}
+
+function disable() {
+    ips | xargs -L1 ifconfig lo0 -alias
+}
+
+args=(hosts ips trim enable disable)
+
+if [[ "$#" -ne 1 || ${args[(i)$1]} -gt ${#args} ]]; then
+    echo "Enable, disable, or show information about loopback aliases for all local ip addresses in /etc/hosts"
+    echo "Usage: $0 { enable | disable | hosts | ips | trim }"
+else
+    $1
+fi
+
